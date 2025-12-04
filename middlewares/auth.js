@@ -10,12 +10,12 @@ const __dirname = path.dirname(__filename);
 // Configuración de usuarios (passwords en texto plano)
 const ADMIN_USERS = {
     'admin': {
-        password: 'StickerAdmin2024!', // Password en texto plano
+        password: 'pass', // Password en texto plano
         role: 'admin',
         name: 'Administrador Principal'
     },
     'operador': {
-        password: 'Operador123!', // Password en texto plano
+        password: 'Operador', // Password en texto plano
         role: 'operator',
         name: 'Operador del Sistema'
     }

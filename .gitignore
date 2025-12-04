@@ -1,0 +1,49 @@
+# Node.js dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+log.*
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# PM2 logs
+.pnpm-store/
+pids/
+pm2/logs/
+pm2/pids/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build output
+dist/
+build/
+.cache/
+
+# Editor directories and files
+.vscode/
+.idea/
+*.swp
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Local configuration
+config/local.json
+config/*.local.json
