@@ -1,0 +1,20 @@
+{
+  "id": "compra_1761577294880_zmxk5xl0p",
+  "usuario": "573002960022",
+  "fecha": "2025-10-27T15:01:34.880Z",
+  "timestamp": "2025-10-27T15:01:34.716Z",
+  "items": [
+    {
+      "cantidad": 10,
+      "valor": 10000
+    }
+  ],
+  "totalStickers": 10,
+  "valorTotal": 10000,
+  "estado": "rechazada",
+  "comprobante": "comprobante_573002960022_1761577308193.jpg",
+  "fecha_comprobante": "2025-10-27T15:01:48.194Z",
+  "fecha_rechazo": "2025-10-27T17:20:36.912Z",
+  "motivo_rechazo": "Sin motivo especificado",
+  "admin_que_rechazo": "admin"
+}

@@ -1,0 +1,45 @@
+{
+    "sorteos": [
+        {
+            "id": 1,
+            "nombre": "Sticker Rueda y Gana",
+            "keyword": "rueda y gana", 
+            "icon": "🏍️",
+            "min_numbers": 10,
+            "price_per_number": 1000,
+            "total_numbers": 99999,
+            "sold_count": 0,
+            "sold_percentage": 0,
+            "status": "activo",
+            "fecha_inicio": "",
+            "fecha_fin": "",
+            "last_update": "2025-10-29 00:23:02",
+            "packages": [
+                {
+                    "quantity": 10,
+                    "price": 10000
+                },
+                {
+                    "quantity": 20,
+                    "price": 20000
+                },
+                {
+                    "quantity": 30,
+                    "price": 30000
+                },
+                {
+                    "quantity": 50,
+                    "price": 50000
+                }
+            ],
+            "premio": {
+                "nombre": "KTM 390 DUKE",
+                "descripcion": "🏍️ MOTOR: 373cc monocilíndrico\n⚡ POTENCIA: 44 HP @ 9,000 RPM \n🎯 TRANSMISIÓN: 6 velocidades\n 🛡️ FRENOS: ABS dual channel\n🌟 ESTADO: ¡0 KM! \n🌟 Año 2026 \n💫 EXTRAS: Inyección electrónica, chasis tubular, suspensión WP",
+                "costo_mercado": "$30,000,000",
+                "color": "#FF6B35",
+                "imagen": "\/img\/motos\/KTM-390-DUKE.PNG"
+            }
+        }
+    ],
+    "last_global_update": "2025-10-29 00:23:02"
+}

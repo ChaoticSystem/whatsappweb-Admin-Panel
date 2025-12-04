@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel Admin - Sticker Rueda y Gana</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+    body { background: #f8fafc; padding: 20px; }
+    .container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden; }
+    .header { background: linear-gradient(135deg, #2c3e50, #34495e); color: white; padding: 25px; text-align: center; }
+    .header h1 { margin-bottom: 8px; font-size: 28px; font-weight: 600; }
+    .header p { opacity: 0.9; font-size: 16px; }
+
+    .status-bar { background: #f8f9fa; padding: 16px 25px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e9ecef; }
+    .status-item { display: flex; align-items: center; gap: 12px; font-size: 14px; }
+    .online { color: #10b981; font-weight: 600; }
+    .offline { color: #ef4444; font-weight: 600; }
+    .connecting { color: #f59e0b; font-weight: 600; }
+
+    /* CONTROLES MEJORADOS */
+    .controls { padding: 20px 25px; background: #ffffff; border-bottom: 1px solid #e9ecef; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+    .search-container { position: relative; flex: 1; min-width: 300px; }
+    .search-box { width: 100%; padding: 12px 16px 12px 42px; border: 2px solid #e9ecef; border-radius: 10px; font-size: 14px; transition: all 0.3s ease; background: #f8fafc; }
+    .search-box:focus { outline: none; border-color: #3b82f6; background: white; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+    .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #6b7280; }
+
+    .filters { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .filter-group { display: flex; align-items: center; gap: 8px; }
+    .filter-label { font-size: 13px; font-weight: 600; color: #374151; white-space: nowrap; }
+    .date-input { padding: 10px 12px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 13px; background: #f8fafc; transition: border-color 0.3s ease; }
+    .date-input:focus { outline: none; border-color: #3b82f6; }
+
+    .actions { display: flex; gap: 10px; align-items: center; }
+    .btn { padding: 10px 18px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; transition: all 0.3s ease; display: flex; align-items: center; gap: 6px; }
+    .btn-primary { background: #3b82f6; color: white; }
+    .btn-primary:hover { background: #2563eb; transform: translateY(-1px); }
+    .btn-success { background: #10b981; color: white; }
+    .btn-success:hover { background: #059669; transform: translateY(-1px); }
+    .btn-danger { background: #ef4444; color: white; }
+    .btn-danger:hover { background: #dc2626; transform: translateY(-1px); }
+    .btn-warning { background: #f59e0b; color: white; }
+    .btn-warning:hover { background: #d97706; transform: translateY(-1px); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none !important; }
+
+    .tabs { display: flex; background: #f8f9fa; border-bottom: 1px solid #e9ecef; flex-wrap: wrap; }
+    .tab { padding: 16px 24px; cursor: pointer; border-right: 1px solid #e9ecef; font-weight: 600; font-size: 14px; transition: all 0.3s ease; position: relative; }
+    .tab:hover { background: #e9ecef; }
+    .tab.active { background: white; color: #3b82f6; border-bottom: 3px solid #3b82f6; }
+    .badge { background: #ef4444; color: white; border-radius: 12px; padding: 2px 8px; font-size: 11px; margin-left: 6px; font-weight: 700; }
+
+    .content { padding: 25px; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-bottom: 25px; }
+    .stat-card { background: white; padding: 20px; border-radius: 10px; border-left: 4px solid #3b82f6; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: transform 0.3s ease; }
+    .stat-card:hover { transform: translateY(-2px); }
+    .stat-card.income { border-left-color: #10b981; }
+    .stat-card.loss { border-left-color: #ef4444; }
+    .stat-card.sold { border-left-color: #f59e0b; }
+    .stat-number { font-size: 26px; font-weight: 700; margin: 8px 0; color: #1f2937; }
+    .stat-label { color: #6b7280; font-size: 13px; font-weight: 600; }
+
+    /* TABLA MEJORADA */
+    .table-container { overflow-x: auto; background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid #e9ecef; }
+    .compras-table { width: 100%; border-collapse: collapse; min-width: 1000px; }
+    .compras-table th { background: #374151; color: white; padding: 14px 16px; text-align: left; font-weight: 600; font-size: 13px; border-bottom: 2px solid #1f2937; }
+    .compras-table td { padding: 14px 16px; border-bottom: 1px solid #f3f4f6; vertical-align: middle; font-size: 13px; }
+    .compras-table tr:hover { background: #f8fafc; }
+    .compras-table tr:last-child td { border-bottom: none; }
+
+    .tel-col { font-family: 'Monaco', 'Consolas', monospace; font-weight: 600; color: #1f2937; }
+    .valor-col { color: #10b981; font-weight: 700; }
+    .stickers-col { text-align: center; font-weight: 700; color: #f59e0b; }
+    .fecha-col { font-size: 12px; color: #6b7280; white-space: nowrap; }
+    .imagen-col { text-align: center; }
+    .acciones-col { text-align: center; white-space: nowrap; }
+
+    .preview-image { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 2px solid #e5e7eb; cursor: pointer; transition: all 0.3s ease; background: #f8fafc; }
+    .preview-image:hover { transform: scale(1.05); border-color: #3b82f6; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .preview-image.error { border-color: #ef4444; background: #fef2f2; }
+
+    .btn-table { padding: 6px 10px; font-size: 11px; margin: 2px; border-radius: 6px; }
+
+    .empty-state { text-align: center; padding: 50px; color: #6b7280; background: #f8fafc; border-radius: 10px; border: 2px dashed #d1d5db; }
+    .empty-state p { font-size: 15px; margin: 0; }
+
+    .notification { position: fixed; top: 25px; right: 25px; background: white; padding: 16px 20px; border-radius: 8px; box-shadow: 0 8px 25px rgba(0,0,0,0.15); border-left: 4px solid #3b82f6; max-width: 320px; z-index: 1000; font-size: 14px; }
+    .notification.success { border-left-color: #10b981; }
+    .notification.error { border-left-color: #ef4444; }
+    .notification.warning { border-left-color: #f59e0b; }
+
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+    .modal-content { background: white; padding: 25px; border-radius: 12px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+    .modal-title { margin-bottom: 18px; color: #1f2937; font-weight: 700; font-size: 18px; }
+    .form-group { margin-bottom: 18px; }
+    .form-group label { display: block; margin-bottom: 6px; font-weight: 600; color: #374151; font-size: 14px; }
+    .form-group textarea { width: 100%; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px; resize: vertical; min-height: 90px; font-size: 14px; transition: border-color 0.3s ease; }
+    .form-group textarea:focus { outline: none; border-color: #3b82f6; }
+    .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 22px; }
+
+    /* WebSocket styles */
+    .websocket-notification { position: fixed; top: 90px; right: 25px; background: #3b82f6; color: white; padding: 12px 18px; border-radius: 8px; z-index: 999; font-size: 13px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
+    .real-time-badge { background: #ef4444; animation: pulse 2s infinite; }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+    .loading { opacity: 0.6; pointer-events: none; position: relative; }
+    .loading::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 20px; height: 20px; border: 2px solid #f3f4f6; border-top: 2px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: translate(-50%, -50%) rotate(0deg); } 100% { transform: translate(-50%, -50%) rotate(360deg); } }
+
+    @media (max-width: 1024px) {
+        .controls { gap: 12px; }
+        .search-container { min-width: 250px; }
+        .filters { gap: 10px; }
+    }
+
+    @media (max-width: 768px) {
+        body { padding: 15px; }
+        .status-bar { flex-direction: column; gap: 12px; align-items: flex-start; }
+        .controls { flex-direction: column; align-items: stretch; }
+        .search-container { min-width: auto; }
+        .filters { justify-content: space-between; width: 100%; }
+        .actions { justify-content: center; width: 100%; }
+        .tabs { flex-direction: column; }
+        .stats { grid-template-columns: 1fr; }
+        .table-container { font-size: 14px; }
+        .compras-table th, .compras-table td { padding: 10px 12px; }
+    }
+</style>
+</head>
+<body> 
+    <div class="container">
+        <div class="header">
+            <h1>🏍️ Panel Administrativo</h1>
+            <p>Sticker Rueda y Gana - Gestión de Compras</p>
+            <div class="user-info">
+                <span id="userWelcome">Bienvenido</span>
+                <button onclick="logout()" class="btn btn-danger btn-sm">🚪 Cerrar Sesión</button>
+            </div>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-item">
+                <span>WebSocket:</span>
+                <span id="websocket-status" class="offline">🔴 Desconectado</span>
+            </div>
+            <div class="status-item">
+                <span>Última actualización:</span>
+                <span id="last-update">--:--:--</span>
+            </div>
+            <button class="btn btn-primary" id="refreshBtn" onclick="cargarTodasLasCompras()">🔄 Actualizar</button>
+        </div>
+
+        <div class="controls">
+            <div class="search-container">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="searchInput" placeholder="Buscar por teléfono o ID..." onkeyup="filtrarCompras()" class="search-box">
+            </div>
+
+            <div class="filters">
+                <div class="filter-group">
+                    <span class="filter-label">Desde:</span>
+                    <input type="date" id="fechaInicio" onchange="filtrarCompras()" class="date-input">
+                </div>
+                <div class="filter-group">
+                    <span class="filter-label">Hasta:</span>
+                    <input type="date" id="fechaFin" onchange="filtrarCompras()" class="date-input">
+                </div>
+            </div>
+
+            <div class="actions">
+                <button class="btn btn-warning" onclick="ejecutarDiagnostico()">
+                    <span>🔍 Diagnosticar</span>
+                </button>
+                <button class="btn btn-success" onclick="exportarExcel()">
+                    📊 Exportar Excel
+                </button>
+            </div>
+        </div>
+
+        <!-- 🔥 NUEVO: Tabs actualizados para la nueva estructura -->
+        <div class="tabs">
+            <div class="tab active" onclick="cambiarPestana('pendientes')">
+                📥 Pendientes <span class="badge" id="badge-pendientes">0</span>
+            </div>
+            <div class="tab" onclick="cambiarPestana('completadas')">
+                ✅ Completadas <span class="badge" id="badge-completadas">0</span>
+            </div>
+            <div class="tab" onclick="cambiarPestana('canceladas')">
+                ❌ Canceladas <span class="badge" id="badge-canceladas">0</span>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="stats">
+                <div class="stat-card income">
+                    <div class="stat-number" id="total-ingresos">$0</div>
+                    <div class="stat-label">Ingresos Totales</div>
+                </div>
+                <div class="stat-card sold">
+                    <div class="stat-number" id="total-vendidos">0</div>
+                    <div class="stat-label">Stickers Vendidos</div>
+                </div>
+                <div class="stat-card total">
+                    <div class="stat-number" id="total-compras">0</div>
+                    <div class="stat-label">Total Compras</div>
+                </div>
+            </div>
+
+            <!-- 🔥 NUEVO: Contenido actualizado para nueva estructura -->
+            <div id="pendientes" class="tab-content">
+                <h3>📋 Compras Pendientes</h3>
+                <div id="compras-pendientes" class="table-container">
+                    <div class="empty-state"><p>🔄 Cargando compras pendientes...</p></div>
+                </div>
+            </div>
+
+            <div id="completadas" class="tab-content" style="display: none;">
+                <h3>✅ Compras Completadas</h3>
+                <div id="compras-completadas" class="table-container">
+                    <div class="empty-state"><p>✅ No hay compras completadas</p></div>
+                </div>
+            </div>
+
+            <div id="canceladas" class="tab-content" style="display: none;">
+                <h3>❌ Compras Canceladas</h3>
+                <div id="compras-canceladas" class="table-container">
+                    <div class="empty-state"><p>❌ No hay compras canceladas</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modales -->
+    <div id="modalImagen" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">📷 Comprobante de Pago</div>
+            <img id="imagenGrande" src="" style="max-width: 100%; max-height: 70vh; border-radius: 5px;">
+            <div class="modal-actions">
+                <button class="btn" onclick="cerrarModal('modalImagen')">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalRechazar" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">❌ Rechazar Compra</div>
+            <div class="form-group">
+                <label for="razonRechazo">Razón del rechazo:</label>
+                <textarea id="razonRechazo" placeholder="Ingresa la razón por la que rechazas esta compra..."></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="btn" onclick="cerrarModal('modalRechazar')">Cancelar</button>
+                <button class="btn btn-danger" onclick="confirmarRechazo()">Rechazar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        // =============================================
+        // CONFIGURACIÓN WEBSOCKET Y ESTADO GLOBAL
+        // =============================================
+        const socket = io();
+        let comprasPendientes = [];
+        let comprasCompletadas = [];
+        let comprasCanceladas = [];
+        let comprasFiltradas = [];
+        let pestanaActual = 'pendientes';
+        let compraSeleccionada = null;
+        let rutaBaseComprobantes = '/comprobantes/';
+
+        // =============================================
+        // WEBSOCKET EVENT HANDLERS
+        // =============================================
+        socket.on('connect', () => {
+            actualizarEstadoWebSocket('🟢 Conectado', 'online');
+            socket.emit('join_admin');
+            mostrarNotificacionWebSocket('Conectado al servidor en tiempo real', 'success');
+        });
+
+        socket.on('disconnect', () => {
+            actualizarEstadoWebSocket('🔴 Desconectado', 'offline');
+            mostrarNotificacionWebSocket('Conexión perdida - Reconectando...', 'error');
+        });
+
+        // =============================================
+        // EVENTOS EN TIEMPO REAL - ACTUALIZADOS
+        // =============================================
+        socket.on('nueva_compra', function(data) {
+            console.log('🛒 NUEVA COMPRA EN TIEMPO REAL:', data);
+            mostrarNotificacion(`🛒 Nueva compra de ${data.usuario}`, 'success');
+            cargarTodasLasCompras();
+            animarBadge('badge-pendientes');
+        });
+
+        socket.on('comprobante_recibido', function(data) {
+             if (data.numero) {
+    actualizarImagenComprobante(data.numero, data.comprobante);
+  }
+            console.log('📸 COMPROBANTE RECIBIDO EN TIEMPO REAL:', data);
+            mostrarNotificacion(`📎 ${data.usuario} envió comprobante`, 'success');
+            cargarTodasLasCompras();
+        });
+
+        socket.on('compra_actualizada', function(data) {
+            console.log('🔄 COMPRA ACTUALIZADA EN TIEMPO REAL:', data);
+            mostrarNotificacion(`📝 Compra de ${data.usuario} actualizada`, 'info');
+            cargarTodasLasCompras();
+        });
+
+        socket.on('compra_completada', function(data) {
+            console.log('✅ COMPRA COMPLETADA EN TIEMPO REAL:', data);
+            mostrarNotificacion(`✅ Compra ${data.compraId} completada con ${data.numerosAsignados} números`, 'success');
+            cargarTodasLasCompras();
+            animarBadge('badge-completadas');
+        });
+
+        socket.on('compra_cancelada', function(data) {
+            console.log('❌ COMPRA CANCELADA EN TIEMPO REAL:', data);
+            mostrarNotificacion(`❌ Compra ${data.compraId} cancelada`, 'warning');
+            cargarTodasLasCompras();
+            animarBadge('badge-canceladas');
+        });
+
+        socket.on('usuario_bloqueado', function(data) {
+            console.log('🚫 USUARIO BLOQUEADO EN TIEMPO REAL:', data);
+            mostrarNotificacion(`🚫 Usuario ${data.userNumber} bloqueado`, 'error');
+            cargarTodasLasCompras();
+        });
+socket.on('comprobante_recibido', data => {
+
+  if (data.numero) {
+    actualizarImagenComprobante(data.numero, data.comprobante);
+  }
+});
+
+// ✅ Función que actualiza el <img> del comprobante sin recargar la página
+function actualizarImagenComprobante(numero, fileName) {
+  const img = document.querySelector(`#comprobante-${numero}`);
+  if (img) {
+    img.src = `/comprobantes/${fileName}?t=${Date.now()}`; // evitar caché
+    img.classList.add('img-updated');
+  }
+}
+        // =============================================
+        // FUNCIONES PRINCIPALES - ACTUALIZADAS
+        // =============================================
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Panel admin cargado - Iniciando carga de datos...');
+            verificarAutenticacion();
+            cargarTodasLasCompras();
+            setInterval(cargarTodasLasCompras, 30000);
+            setInterval(verificarAutenticacion, 60000); // Verificar cada minuto
+        });
+
+        // 🔥 NUEVO: Verificar autenticación
+        async function verificarAutenticacion() {
+            try {
+                const response = await fetch('/admin/auth/verify');
+                const data = await response.json();
+                
+                if (!data.success || !data.authenticated) {
+                    // Redirigir al login si no está autenticado
+                    window.location.href = '/admin/login.html';
+                    return;
+                }
+                
+                // Mostrar información del usuario
+                document.getElementById('userWelcome').textContent = `Bienvenido, ${data.user.name}`;
+            } catch (error) {
+                console.error('Error verificando autenticación:', error);
+                window.location.href = '/admin/login.html';
+            }
+        }
+
+        // 🔥 NUEVO: Cerrar sesión
+        async function logout() {
+            try {
+                const response = await fetch('/admin/auth/logout', { method: 'POST' });
+                const data = await response.json();
+                
+                if (data.success) {
+                    window.location.href = '/admin/login.html';
+                }
+            } catch (error) {
+                console.error('Error cerrando sesión:', error);
+                window.location.href = '/admin/login.html';
+            }
+        }
+
+        async function cargarTodasLasCompras() {
+            console.log('🔄 [FRONTEND] Cargando todas las compras...');
+
+            try {
+                const [pendientesRes, completadasRes, canceladasRes, estadisticasRes] = await Promise.allSettled([
+                    fetch('/admin/api/compras-pendientes'),
+                    fetch('/admin/api/compras-completadas'),
+                    fetch('/admin/api/compras-canceladas'),
+                    fetch('/admin/api/estadisticas')
+                ]);
+
+                // ACTUALIZAR VARIABLES GLOBALES CON NUEVA ESTRUCTURA
+                if (pendientesRes.status === 'fulfilled') {
+                    const pendientesData = await pendientesRes.value.json();
+                    comprasPendientes = pendientesData.compras || [];
+                }
+
+                if (completadasRes.status === 'fulfilled') {
+                    const completadasData = await completadasRes.value.json();
+                    comprasCompletadas = completadasData.compras || [];
+                }
+
+                if (canceladasRes.status === 'fulfilled') {
+                    const canceladasData = await canceladasRes.value.json();
+                    comprasCanceladas = canceladasData.compras || [];
+                }
+
+                if (estadisticasRes.status === 'fulfilled') {
+                    const estadisticasData = await estadisticasRes.value.json();
+                    actualizarEstadisticas(estadisticasData);
+                }
+
+                // ACTUALIZAR INTERFAZ
+                actualizarBadges();
+                filtrarCompras();
+                actualizarUltimaActualizacion();
+
+            } catch (error) {
+                console.error('❌ [FRONTEND] Error cargando compras:', error);
+            }
+        }
+
+        function actualizarEstadisticas(data) {
+            document.getElementById('total-ingresos').textContent = `$${(data.totalIngresos || 0).toLocaleString()}`;
+            document.getElementById('total-vendidos').textContent = data.totalVendidos || 0;
+            document.getElementById('total-compras').textContent = data.totalCompras || 0;
+        }
+
+        function actualizarBadges() {
+            document.getElementById('badge-pendientes').textContent = comprasPendientes.length;
+            document.getElementById('badge-completadas').textContent = comprasCompletadas.length;
+            document.getElementById('badge-canceladas').textContent = comprasCanceladas.length;
+        }
+
+        function actualizarUltimaActualizacion() {
+            const ahora = new Date();
+            document.getElementById('last-update').textContent = ahora.toLocaleTimeString();
+        }
+
+        function cambiarPestana(pestana) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.style.display = 'none');
+
+            document.querySelector(`.tab[onclick="cambiarPestana('${pestana}')"]`).classList.add('active');
+            document.getElementById(pestana).style.display = 'block';
+
+            pestanaActual = pestana;
+            filtrarCompras();
+        }
+
+        function filtrarCompras() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const fechaInicio = document.getElementById('fechaInicio').value;
+            const fechaFin = document.getElementById('fechaFin').value;
+
+            let comprasAFiltrar = [];
+            switch(pestanaActual) {
+                case 'pendientes': comprasAFiltrar = comprasPendientes; break;
+                case 'completadas': comprasAFiltrar = comprasCompletadas; break;
+                case 'canceladas': comprasAFiltrar = comprasCanceladas; break;
+            }
+
+            comprasFiltradas = comprasAFiltrar.filter(c => {
+                const usuario = (c.usuario || '').toLowerCase();
+                const id = (c.id || '').toString().toLowerCase();
+                const fechaCompra = new Date(c.fecha);
+
+                const termMatch = usuario.includes(searchTerm) || id.includes(searchTerm);
+                const fechaMatch = (!fechaInicio || fechaCompra >= new Date(fechaInicio)) &&
+                                  (!fechaFin || fechaCompra <= new Date(fechaFin + 'T23:59:59'));
+
+                return termMatch && fechaMatch;
+            });
+
+            renderizarComprasTabla();
+        }
+
+        function renderizarComprasTabla() {
+            const container = document.getElementById(`compras-${pestanaActual}`);
+            if (!container) return;
+
+            if (comprasFiltradas.length === 0) {
+                container.innerHTML = `<div class="empty-state"><p>No hay compras ${pestanaActual}</p></div>`;
+                return;
+            }
+
+            const esPendiente = pestanaActual === 'pendientes';
+
+            let tablaHTML = `
+                <table class="compras-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Teléfono</th>
+                            <th>Cliente</th>
+                            <th>Sorteo</th>
+                            <th>Stickers</th>
+                            <th>Valor</th>
+                            <th>Fecha</th>
+                            <th>Comprobante</th>
+                            ${esPendiente ? '<th>Acciones</th>' : '<th>Estado</th>'}
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            comprasFiltradas.forEach(compra => {
+                const compraId = compra.id;
+                const usuario = compra.usuario;
+                const nombreCliente = compra.nombre_cliente || 'Cliente';
+                const sorteo = compra.sorteo_nombre || 'Sticker Rueda y Gana';
+                const cantidad = compra.total_stickers || 0;
+                const valor = compra.valor_total || 0;
+                const fecha = compra.fecha;
+                const comprobante = compra.comprobante;
+                const numerosStickers = compra.numeros_stickers || [];
+
+                const imgUrl = comprobante ? (rutaBaseComprobantes + comprobante) : '';
+                const tieneImagen = imgUrl && comprobante;
+
+                // 🔥 NUEVO: Mostrar números de stickers para completadas
+                const infoNumeros = numerosStickers.length > 0 ? 
+                    `<br><small>🔢 ${numerosStickers.length} números</small>` : '';
+
+                tablaHTML += `
+                    <tr id="fila-${compraId}">
+                        <td class="id-col">${compraId}</td>
+                        <td class="tel-col">${usuario}</td>
+                        <td class="nombre-col">${nombreCliente}</td>
+                        <td class="sorteo-col">${sorteo}</td>
+                        <td class="stickers-col">${cantidad}</td>
+                        <td class="valor-col">$${valor.toLocaleString()}</td>
+                        <td class="fecha-col">${new Date(fecha).toLocaleString()}</td>
+                        <td class="imagen-col">
+                            ${tieneImagen ?
+                                `<img src="${imgUrl}" class="preview-image" onclick="verImagen('${imgUrl}')" alt="Comprobante" onerror="this.classList.add('error')">` :
+                                '❌ Sin imagen'
+                            }
+                        </td>
+                        ${esPendiente ? `
+                        <td class="acciones-col">
+                            <button class="btn btn-success btn-table" onclick="aprobarCompra('${compraId}')" title="Aprobar compra">✅</button>
+                            <button class="btn btn-danger btn-table" onclick="solicitarRechazo('${compraId}')" title="Rechazar compra">❌</button>
+                            <button class="btn btn-warning btn-table" onclick="bloquearUsuario('${usuario}')" title="Bloquear usuario">🚫</button>
+                        </td>` : 
+                        `<td class="estado-col">
+                            <span class="badge ${pestanaActual === 'completadas' ? 'badge-success' : 'badge-danger'}">
+                                ${pestanaActual === 'completadas' ? '✅ Completada' : '❌ Cancelada'}
+                            </span>
+                            ${infoNumeros}
+                        </td>`}
+                    </tr>
+                `;
+            });
+
+            tablaHTML += `
+                    </tbody>
+                </table>
+            `;
+
+            container.innerHTML = tablaHTML;
+        }
+
+        // =============================================
+        // FUNCIONES DE ACCIÓN (MANTENIDAS)
+        // =============================================
+        async function aprobarCompra(compraId) {
+            if (!confirm('¿Estás seguro de que quieres APROBAR esta compra?')) return;
+
+            try {
+                const fila = document.getElementById(`fila-${compraId}`);
+                if (fila) fila.classList.add('loading');
+
+                const response = await fetch(`/admin/api/aceptar-compra/${compraId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    mostrarNotificacion('✅ Compra aprobada exitosamente', 'success');
+                    cargarTodasLasCompras();
+                } else {
+                    throw new Error(data.error || 'Error desconocido');
+                }
+
+            } catch (error) {
+                console.error('Error aprobando compra:', error);
+                mostrarNotificacion(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        function solicitarRechazo(compraId) {
+            compraSeleccionada = compraId;
+            document.getElementById('razonRechazo').value = '';
+            abrirModal('modalRechazar');
+        }
+
+        async function confirmarRechazo() {
+            const razon = document.getElementById('razonRechazo').value.trim();
+            if (!razon) {
+                alert('Por favor ingresa una razón para el rechazo');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/admin/api/rechazar-compra/${compraSeleccionada}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ razon })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    mostrarNotificacion('❌ Compra rechazada exitosamente', 'warning');
+                    cerrarModal('modalRechazar');
+                    cargarTodasLasCompras();
+                } else {
+                    throw new Error(data.error || 'Error desconocido');
+                }
+
+            } catch (error) {
+                console.error('Error rechazando compra:', error);
+                mostrarNotificacion(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function bloquearUsuario(usuario) {
+            const razon = prompt(`Ingresa la razón para bloquear al usuario ${usuario}:`);
+            if (!razon) return;
+
+            try {
+                const response = await fetch(`/admin/api/bloquear-usuario/${usuario}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ razon })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    mostrarNotificacion(`🚫 Usuario ${usuario} bloqueado`, 'error');
+                    cargarTodasLasCompras();
+                } else {
+                    throw new Error(data.error || 'Error desconocido');
+                }
+
+            } catch (error) {
+                console.error('Error bloqueando usuario:', error);
+                mostrarNotificacion(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // =============================================
+        // FUNCIONES UTILITARIAS (MANTENIDAS)
+        // =============================================
+        function verImagen(url) {
+            const modal = document.getElementById('modalImagen');
+            const img = document.getElementById('imagenGrande');
+            img.src = url;
+            modal.style.display = 'flex';
+        }
+
+        function abrirModal(modalId) {
+            document.getElementById(modalId).style.display = 'flex';
+        }
+
+        function cerrarModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        function mostrarNotificacion(mensaje, tipo = 'success') {
+            const notif = document.createElement('div');
+            notif.className = `notification ${tipo}`;
+            notif.textContent = mensaje;
+            document.body.appendChild(notif);
+            setTimeout(() => notif.remove(), 5000);
+        }
+
+        function mostrarNotificacionWebSocket(mensaje, tipo = 'success') {
+            const notif = document.createElement('div');
+            notif.className = `websocket-notification ${tipo}`;
+            notif.textContent = mensaje;
+            document.body.appendChild(notif);
+            setTimeout(() => notif.remove(), 3000);
+        }
+
+        function actualizarEstadoWebSocket(mensaje, clase) {
+            const element = document.getElementById('websocket-status');
+            element.textContent = mensaje;
+            element.className = clase;
+        }
+
+        function animarBadge(badgeId) {
+            const badge = document.getElementById(badgeId);
+            if (badge) {
+                badge.classList.add('real-time-badge');
+                setTimeout(() => badge.classList.remove('real-time-badge'), 2000);
+            }
+        }
+
+        function ejecutarDiagnostico() {
+            const diagnosticInfo = `
+📊 DIAGNÓSTICO DEL SISTEMA:
+
+WebSocket: ${socket.connected ? '✅ Conectado' : '❌ Desconectado'}
+Compras Pendientes: ${comprasPendientes.length}
+Compras Completadas: ${comprasCompletadas.length}
+Compras Canceladas: ${comprasCanceladas.length}
+Última Actualización: ${document.getElementById('last-update').textContent}
+
+Estado: ${socket.connected ? '✅ SISTEMA OPERATIVO' : '⚠️ VERIFICAR CONEXIÓN'}
+            `.trim();
+
+            alert(diagnosticInfo);
+        }
+
+        function exportarExcel() {
+            let datos = [];
+
+            let lista = comprasFiltradas.length > 0 ? comprasFiltradas : (
+                pestanaActual === 'pendientes' ? comprasPendientes :
+                pestanaActual === 'completadas' ? comprasCompletadas :
+                comprasCanceladas
+            );
+
+            if (lista.length === 0) {
+                alert("No hay datos para exportar.");
+                return;
+            }
+
+            datos = lista.map((c, i) => ({
+                "#": i + 1,
+                "ID": c.id,
+                "Teléfono": c.usuario,
+                "Cliente": c.nombre_cliente || "Cliente",
+                "Sorteo": c.sorteo_nombre,
+                "Stickers": c.total_stickers,
+                "Valor": c.valor_total,
+                "Fecha": new Date(c.fecha).toLocaleString(),
+                "Estado": pestanaActual.toUpperCase(),
+                "Números Stickers": (c.numeros_stickers || []).join(', '),
+                "Comprobante": c.comprobante || "Sin imagen"
+            }));
+
+            const hoja = XLSX.utils.json_to_sheet(datos);
+            const libro = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(libro, hoja, pestanaActual);
+
+            const fecha = new Date().toISOString().slice(0,19).replace(/[:T]/g, "-");
+            const nombreArchivo = `Compras_${pestanaActual}_${fecha}.xlsx`;
+
+            XLSX.writeFile(libro, nombreArchivo);
+            mostrarNotificacion(`📊 Archivo Excel generado (${lista.length} registros)`, 'success');
+        }
+    </script>
+</body>
+</html>
