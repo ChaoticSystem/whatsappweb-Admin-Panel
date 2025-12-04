@@ -131,8 +131,8 @@
 <body> 
     <div class="container">
         <div class="header">
-            <h1>🏍️ Panel Administrativo</h1>
-            <p>Sticker Rueda y Gana - Gestión de Compras</p>
+            <h1>Panel Administrativo</h1>
+            <p>Gestión de Compras</p>
             <div class="user-info">
                 <span id="userWelcome">Bienvenido</span>
                 <button onclick="logout()" class="btn btn-danger btn-sm">🚪 Cerrar Sesión</button>
@@ -357,7 +357,7 @@ function actualizarImagenComprobante(numero, fileName) {
         // 🔥 NUEVO: Verificar autenticación
         async function verificarAutenticacion() {
             try {
-                const response = await fetch('/admin/auth/verify');
+                const response = await fetch('/admin/auth/verify', { credentials: 'include' });
                 const data = await response.json();
                 
                 if (!data.success || !data.authenticated) {
@@ -394,10 +394,10 @@ function actualizarImagenComprobante(numero, fileName) {
 
             try {
                 const [pendientesRes, completadasRes, canceladasRes, estadisticasRes] = await Promise.allSettled([
-                    fetch('/admin/api/compras-pendientes'),
-                    fetch('/admin/api/compras-completadas'),
-                    fetch('/admin/api/compras-canceladas'),
-                    fetch('/admin/api/estadisticas')
+                    fetch('/admin/api/compras-pendientes', { credentials: 'include' }),
+                    fetch('/admin/api/compras-completadas', { credentials: 'include' }),
+                    fetch('/admin/api/compras-canceladas', { credentials: 'include' }),
+                    fetch('/admin/api/estadisticas', { credentials: 'include' })
                 ]);
 
                 // ACTUALIZAR VARIABLES GLOBALES CON NUEVA ESTRUCTURA

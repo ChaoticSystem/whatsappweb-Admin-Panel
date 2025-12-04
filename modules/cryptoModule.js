@@ -148,16 +148,22 @@ class CryptoModule {
      */
     encryptAES(data, key) {
         try {
-            const iv = crypto.randomBytes(16);
-            const cipher = crypto.createCipher('aes-256-gcm', key);
-            
-            let encrypted = cipher.update(data, 'utf8', 'base64');
-            encrypted += cipher.final('base64');
-            
+            // Ensure key is a 32-byte Buffer. If user passed a password string, derive with SHA-256.
+            if (typeof key === 'string') {
+                key = crypto.createHash('sha256').update(key).digest();
+            }
+            if (!Buffer.isBuffer(key) || key.length !== 32) {
+                throw new Error('AES key must be 32 bytes');
+            }
+
+            const iv = crypto.randomBytes(12); // 96-bit nonce recommended for GCM
+            const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+
+            const encryptedBuf = Buffer.concat([cipher.update(data, 'utf8'), cipher.final()]);
             const authTag = cipher.getAuthTag();
-            
+
             return {
-                encrypted: encrypted,
+                encrypted: encryptedBuf.toString('base64'),
                 iv: iv.toString('base64'),
                 authTag: authTag.toString('base64')
             };
@@ -172,14 +178,22 @@ class CryptoModule {
      */
     decryptAES(encryptedData, key, iv, authTag) {
         try {
-            const decipher = crypto.createDecipher('aes-256-gcm', key);
+            if (typeof key === 'string') {
+                key = crypto.createHash('sha256').update(key).digest();
+            }
+            if (!Buffer.isBuffer(key) || key.length !== 32) {
+                throw new Error('AES key must be 32 bytes');
+            }
+
+            const decipher = crypto.createDecipheriv('aes-256-gcm', key, Buffer.from(iv, 'base64'));
             decipher.setAuthTag(Buffer.from(authTag, 'base64'));
-            decipher.setAAD(Buffer.from(''));
-            
-            let decrypted = decipher.update(encryptedData, 'base64', 'utf8');
-            decrypted += decipher.final('utf8');
-            
-            return decrypted;
+
+            const decryptedBuf = Buffer.concat([
+                decipher.update(Buffer.from(encryptedData, 'base64')),
+                decipher.final()
+            ]);
+
+            return decryptedBuf.toString('utf8');
         } catch (error) {
             console.error('❌ Error en descifrado AES:', error);
             throw error;

@@ -10,12 +10,18 @@ class Application {
     constructor() {
         this.app = express();
         this.server = createServer(this.app); // ← SERVER HTTP para Socket.IO
+        // Limitar orígenes permitidos para Socket.IO vía env `CORS_ORIGINS` (comma-separated)
+        const allowedOrigins = process.env.CORS_ORIGINS
+            ? process.env.CORS_ORIGINS.split(',').map(s => s.trim())
+            : ['http://localhost:3000'];
+
         this.io = new Server(this.server, {
             cors: {
-                origin: "*",
-                methods: ["GET", "POST"]
+                origin: allowedOrigins,
+                methods: ["GET", "POST"],
+                credentials: true
             }
-        }); // ← INICIALIZAR SOCKET.IO
+        }); // ← INICIALIZAR SOCKET.IO (origins restringidos)
         this.port = process.env.PORT || 3000;
     }
 

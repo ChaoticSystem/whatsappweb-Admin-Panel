@@ -1,3 +1,5 @@
+// Cargar variables de entorno desde `.env` si existe
+import 'dotenv/config';
 import { initializeApp } from './index.js';
 
 initializeApp()

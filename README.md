@@ -93,50 +93,24 @@ Bot-ElChanchoGanador/
     ├── clave_privada.pem
     └── clave_publica.pem
 
-🚀 Instalación y uso
-1️⃣ Clonar el repositorio
-git clone https://github.com/ChaoticSystem/whatsappweb-Admin-Panel.git
-cd whatsappweb-Admin-Panel
+    
+## Instalación rápida
 
-2️⃣ Instalar dependencias
-npm install
+1. Clonar:
+   git clone https://github.com/ChaoticSystem/whatsappweb-Admin-Panel.git
+   cd whatsappweb-Admin-Panel
 
-3️⃣ Configurar variables necesarias
+2. Instalar dependencias:
+   npm install
 
-Asegúrate de editar:
+3. Crear archivo de entorno:
+   cp .env.example .env
+   editar `.env` y rellenar valores (JWT_SECRET, rutas de claves, etc.)
 
-config/config.json
-config/whatsapp-config.js
+4. **No** subas claves ni `.env` al repositorio.
 
+5. Ejecutar en desarrollo:
+   node index.js
 
-Y colocar tus claves RSA en:
-
-claves_node/clave_privada.pem
-claves_node/clave_publica.pem
-
-4️⃣ Ejecutar en desarrollo
-node index.js
-
-5️⃣ Ejecutar en producción (PM2)
-pm2 start ecosystem.config.cjs
-
-🛡 Seguridad
-
-Tokens encriptados
-
-Rate limit
-
-Middlewares anti flooding
-
-Protección contra requests maliciosas
-
-Sesiones aisladas
-
-📝 Licencia
-
-MIT License.
-Libre para modificar y usar.
-
-👨‍💻 Autor
-
-ChaoticSystem
+6. En producción (PM2):
+   pm2 start ecosystem.config.cjs

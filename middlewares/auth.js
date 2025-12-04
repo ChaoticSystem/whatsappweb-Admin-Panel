@@ -1,27 +1,62 @@
 // middlewares/auth.js - VERSIÓN CORREGIDA
 import crypto from 'crypto';
 import path from 'path';
+import fs from 'fs';
+import bcrypt from 'bcrypt';
 import { fileURLToPath } from 'url';
 
 // 🔥 PARA USAR __dirname EN ES MODULES
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Configuración de usuarios (passwords en texto plano)
-const ADMIN_USERS = {
-    'admin': {
-        password: 'pass', // Password en texto plano
-        role: 'admin',
-        name: 'Administrador Principal'
-    },
-    'operador': {
-        password: 'Operador', // Password en texto plano
-        role: 'operator',
-        name: 'Operador del Sistema'
-    }
-};
+// Cargar usuarios administrativos desde configuración segura.
+// Preferir `process.env.ADMIN_USERS_JSON` (JSON: { "user": { "passwordHash": "...", "role": "", "name": "" } })
+// O `process.env.ADMIN_USERS_FILE` que apunte a un archivo JSON con la misma estructura.
+let ADMIN_USERS = {};
 
-const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
+try {
+    if (process.env.ADMIN_USERS_JSON) {
+        ADMIN_USERS = JSON.parse(process.env.ADMIN_USERS_JSON);
+    } else if (process.env.ADMIN_USERS_FILE && fs.existsSync(process.env.ADMIN_USERS_FILE)) {
+        ADMIN_USERS = JSON.parse(fs.readFileSync(process.env.ADMIN_USERS_FILE, 'utf8'));
+    } else if (process.env.NODE_ENV !== 'production') {
+        // Fallback de desarrollo: generar hashes para usuarios de ejemplo.
+        ADMIN_USERS = {
+            admin: {
+                passwordHash: bcrypt.hashSync('pass', 12),
+                role: 'admin',
+                name: 'Administrador Principal'
+            },
+            operador: {
+                passwordHash: bcrypt.hashSync('Operador', 12),
+                role: 'operator',
+                name: 'Operador del Sistema'
+            }
+        };
+        console.warn('⚠️ Usando usuarios administrativos de desarrollo. No usar en producción.');
+    } else {
+        throw new Error('ADMIN_USERS no configurado. Defina ADMIN_USERS_JSON o ADMIN_USERS_FILE');
+    }
+} catch (err) {
+    console.error('❌ Error cargando ADMIN_USERS:', err.message);
+    // En producción debemos fallar rápido; en dev continuar con objeto vacío.
+    if (process.env.NODE_ENV === 'production') throw err;
+}
+
+// Log summary of loaded admin users (names only, no secrets)
+try {
+    const userKeys = Object.keys(ADMIN_USERS || {});
+    if (userKeys.length === 0) {
+        console.warn('⚠️ No se cargaron usuarios administrativos (ADMIN_USERS vacío)');
+    } else {
+        console.log(`🔐 Usuarios administrativos cargados: ${userKeys.length} -> ${userKeys.join(', ')}`);
+    }
+} catch (e) {
+    // no-op
+}
+
+// SESSION_SECRET must be provided via env in production. Do not silently generate in prod.
+const SESSION_SECRET = process.env.SESSION_SECRET;
 
 function requireAuth(req, res, next) {
     if (req.session && req.session.authenticated && req.session.user) {
@@ -57,24 +92,32 @@ async function verifyCredentials(username, password) {
         return null;
     }
 
-    // Comparación simple de passwords (texto plano)
-    const isValid = password === user.password;
-    console.log(`🔐 Password válido: ${isValid}`);
+    const hash = user.passwordHash || user.password; // backward compatible if file used different key
+    if (!hash) {
+        console.error('❌ No hay hash de password para el usuario:', username);
+        return null;
+    }
 
-    if (!isValid) return null;
+    try {
+        const isValid = await bcrypt.compare(password, hash);
+        if (!isValid) return null;
 
-    return {
-        username: username,
-        name: user.name,
-        role: user.role,
-        loginTime: new Date().toISOString()
-    };
+        return {
+            username: username,
+            name: user.name,
+            role: user.role,
+            loginTime: new Date().toISOString()
+        };
+    } catch (err) {
+        console.error('❌ Error verificando password:', err.message);
+        return null;
+    }
 }
 
 // Middleware para servir panel admin con autenticación
 function serveAdminPanel(req, res) {
     console.log('🔐 Intentando servir panel admin...');
-    console.log('🔐 Sesión:', req.session);
+    console.log('🔐 Sesión verificada para usuario:', req.session?.user?.username || 'anonymous');
 
     if (req.session && req.session.authenticated) {
         console.log('✅ Usuario autenticado, sirviendo panel admin');

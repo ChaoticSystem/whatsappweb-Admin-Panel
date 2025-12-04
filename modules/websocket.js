@@ -1,5 +1,8 @@
 // modules/websocket.js - VERSIÓN CORREGIDA Y COMPLETA
 import { Server as socketIo } from 'socket.io'; // ← CORREGIDO
+import cookie from 'cookie';
+import cookieSignature from 'cookie-signature';
+import Redis from 'ioredis';
 
 class WebSocketModule {
     constructor() {
@@ -22,6 +25,70 @@ class WebSocketModule {
             transports: ['websocket', 'polling']
         });
 
+        // Socket authentication middleware: try token first, then try to validate
+        // session from Redis (if REDIS_URL configured). The Redis session store
+        // uses the same session id namespace ('sess:') as express-session.
+        const redisUrl = process.env.REDIS_URL;
+        const redisClient = redisUrl ? new Redis(redisUrl) : null;
+
+        this.io.use(async (socket, next) => {
+            try {
+                // 1) token via handshake.auth or Authorization header
+                const token = socket.handshake.auth?.token ||
+                    (socket.handshake.headers && socket.handshake.headers.authorization
+                        ? socket.handshake.headers.authorization.split(' ')[1]
+                        : null);
+
+                if (token && process.env.ADMIN_SOCKET_TOKEN && token === process.env.ADMIN_SOCKET_TOKEN) {
+                    socket.authenticated = true;
+                    socket.userRole = 'admin';
+                    return next();
+                }
+
+                // 2) try session cookie -> read session from redis
+                const rawCookie = socket.handshake.headers.cookie;
+                if (rawCookie && redisClient) {
+                    const cookies = cookie.parse(rawCookie || '');
+                    const cookieName = process.env.SESSION_COOKIE_NAME || 'sid';
+                    const raw = cookies[cookieName];
+                    if (raw) {
+                        // cookie might be urlencoded and signed (s:)... handle common formats
+                        const unsigned = raw.startsWith('s:') ? raw.slice(2).split('.')[0] : raw.split('.')[0];
+                        // If cookie is signed, try to unsign using SESSION_SECRET
+                        let sid = unsigned;
+                        if (raw.startsWith('s:') && process.env.SESSION_SECRET) {
+                            const uns = cookieSignature.unsign(unsigned, process.env.SESSION_SECRET);
+                            if (uns) sid = uns;
+                        }
+
+                        const sessionKey = `sess:${sid}`;
+                        const sessionData = await redisClient.get(sessionKey);
+                        if (sessionData) {
+                            try {
+                                const sessionObj = JSON.parse(sessionData);
+                                if (sessionObj && sessionObj.user && sessionObj.user.role === 'admin') {
+                                    socket.authenticated = true;
+                                    socket.userRole = 'admin';
+                                    socket.session = sessionObj;
+                                    return next();
+                                }
+                            } catch (e) {
+                                // ignore parse errors
+                            }
+                        }
+                    }
+                }
+
+                // Allow connection but mark unauthenticated; admin actions must check.
+                socket.authenticated = false;
+                socket.userRole = null;
+                return next();
+            } catch (err) {
+                console.error('Socket auth error:', err.message);
+                return next(new Error('Unauthorized'));
+            }
+        });
+
         this.setupEventHandlers();
         console.log('✅ WebSocket Module inicializado correctamente');
         return this;
@@ -41,6 +108,13 @@ class WebSocketModule {
 
             // 🔥 UNIRSE AL PANEL ADMIN - ESTO ES LO QUE FALTABA
             socket.on('join_admin', () => {
+                // Only allow joining admin room if the socket was authenticated as admin
+                if (!socket.authenticated || socket.userRole !== 'admin') {
+                    socket.emit('error', { message: 'Unauthorized to join admin room' });
+                    console.warn(`👮‍♂️ Intento join_admin no autorizado: ${socket.id}`);
+                    return;
+                }
+
                 socket.join('admin_room');
                 this.adminRooms.add(socket.id);
                 console.log(`👨‍💼 Cliente ${socket.id} unido a sala admin`);

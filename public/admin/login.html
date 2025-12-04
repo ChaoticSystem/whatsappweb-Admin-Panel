@@ -137,7 +137,7 @@
         <div id="errorMessage" class="error-message"></div>
         <div id="successMessage" class="success-message"></div>
 
-        <form id="loginForm">
+        <form id="loginForm" method="post" action="/admin/auth/login">
             <div class="form-group">
                 <label for="username">Usuario:</label>
                 <input type="text" id="username" name="username" required placeholder="Ingresa tu usuario">
@@ -152,6 +152,12 @@
                 Iniciar Sesión
             </button>
         </form>
+
+        <noscript>
+            <div class="error-message" style="display:block; margin-top:10px;">
+                JavaScript está deshabilitado en tu navegador. El formulario enviará una petición estándar al servidor.
+            </div>
+        </noscript>
 
         <div class="loading" id="loading">
             🔐 Verificando credenciales...
@@ -189,6 +195,7 @@
             try {
                 const response = await fetch('/admin/auth/login', {
                     method: 'POST',
+                    credentials: 'include',
                     headers: {
                         'Content-Type': 'application/json',
                     },
