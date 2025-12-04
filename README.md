@@ -1,50 +1,142 @@
-# WhatsApp Web Admin Panel
+# 🟢 WhatsApp Web Admin Panel
 
-Un panel administrativo avanzado para gestionar **instancias de WhatsApp Web** mediante automatización con Node.js.  
-Permite controlar sesiones, leer códigos QR, manejar mensajes y administrar múltiples dispositivos mediante una interfaz web profesional.
+Un **panel administrativo avanzado** para gestionar **instancias de WhatsApp Web** mediante automatización con Node.js.  
+Este sistema permite administrar múltiples sesiones de WhatsApp, leer códigos QR, enviar/recibir mensajes, manejar usuarios y ofrecer un panel visual completo para operadores o administradores.
 
 ---
 
-## 🚀 Características
+## 🚀 Características principales
 
-- 🔐 **Autenticación segura**
-- 📡 **Gestión de sesiones WhatsApp Web**
+- 🔐 **Autenticación segura con tokens**
+- 📡 **Gestión de múltiples sesiones WhatsApp Web**
 - 📲 Visualización de **QR en tiempo real**
-- 🔄 Reconexión automática
-- 📨 Lectura y envío de mensajes
-- 🕹 Panel administrativo completo
-- 🌐 Interfaz responsiva y moderna
-- 🛠 API REST para automatizaciones externas
+- 🔄 Reconexión automática ante fallos
+- 📥 Recepción y envío de mensajes
+- 🕹 Panel administrativo profesional
+- 🌐 Interfaz web responsiva
+- ⚙ API REST para integraciones externas
+- 📊 Estadísticas del sistema y uso
+- 🔔 Notificaciones en tiempo real vía WebSocket
+- 🛡 Middlewares de seguridad y rate-limit
 
 ---
 
 ## 📦 Tecnologías utilizadas
 
+### **Backend**
 - Node.js
 - Express.js
-- WebSocket / Socket.IO
-- Puppeteer / Playwright
+- Socket.IO
 - WhatsApp Web reverse-engineering
-- TailwindCSS / Bootstrap (dependiendo del build)
-- PM2 (para producción)
+- Puppeteer / Playwright
+- JSON Web Tokens (JWT)
+- Criptografía RSA / AES
+
+### **Frontend**
+- HTML5 / CSS3
+- TailwindCSS o Bootstrap
+- JavaScript (ES6)
+
+### **DevOps**
+- PM2 para producción
+- Nginx (opcional)
+- Logs rotativos
 
 ---
 
 ## 📁 Estructura del proyecto
 
 ```plaintext
-whatsappweb-Admin-Panel/
-│── src/
-│   ├── controllers/
-│   ├── services/
-│   ├── routes/
-│   ├── utils/
-│   ├── public/
-│   └── views/
-│
-│── config/
-│── logs/
-│── .gitignore
+Bot-ElChanchoGanador/
+│── app.js
+│── index.js
 │── package.json
-│── README.md
-│── LICENSE
+│── ecosystem.config.cjs
+│
+├── config/
+│   ├── config.json
+│   ├── cryptoConfig.js
+│   ├── whatsapp-config.js
+│
+├── modules/
+│   ├── compras.js
+│   ├── comprobantes.js
+│   ├── cryptoModule.js
+│   ├── estadisticas.js
+│   ├── notificaciones.js
+│   ├── usuarios.js
+│   ├── utils.js
+│   ├── websocket.js
+│   ├── whatsapp.js
+│
+├── middlewares/
+│   ├── auth.js
+│   ├── securityMiddleware.js
+│   ├── messageHandler.js
+│   ├── rateLimitMiddleware.js
+│   └── index.js
+│
+├── routes/
+│   ├── admin.js
+│   ├── auth.js
+│   └── index.js
+│
+├── public/
+│   └── admin/
+│       ├── index.html
+│       └── login.html
+│
+├── utils/
+│   └── cryptoUtils.js
+│
+└── claves_node/
+    ├── clave_privada.pem
+    └── clave_publica.pem
+
+🚀 Instalación y uso
+1️⃣ Clonar el repositorio
+git clone https://github.com/ChaoticSystem/whatsappweb-Admin-Panel.git
+cd whatsappweb-Admin-Panel
+
+2️⃣ Instalar dependencias
+npm install
+
+3️⃣ Configurar variables necesarias
+
+Asegúrate de editar:
+
+config/config.json
+config/whatsapp-config.js
+
+
+Y colocar tus claves RSA en:
+
+claves_node/clave_privada.pem
+claves_node/clave_publica.pem
+
+4️⃣ Ejecutar en desarrollo
+node index.js
+
+5️⃣ Ejecutar en producción (PM2)
+pm2 start ecosystem.config.cjs
+
+🛡 Seguridad
+
+Tokens encriptados
+
+Rate limit
+
+Middlewares anti flooding
+
+Protección contra requests maliciosas
+
+Sesiones aisladas
+
+📝 Licencia
+
+MIT License.
+Libre para modificar y usar.
+
+👨‍💻 Autor
+
+ChaoticSystem
