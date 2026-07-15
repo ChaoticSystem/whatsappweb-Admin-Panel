@@ -14,7 +14,7 @@ module.exports = {
         // Aquí puedes agregar variables de entorno personalizadas:
         API_KEY_PUBLIC: 'MI_API_PUBLICA',
         SHARED_SECRET: 'TU_SECRETO_COMPARTIDO',
-        REMOTE_API_BASE: 'https://stickeruedaygana.com'
+        REMOTE_API_BASE: 'https://domain....com'
       },
       error_file: './logs/error.log',     // Archivo de errores
       out_file: './logs/out.log',         // Archivo de salida normal
